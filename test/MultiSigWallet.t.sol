@@ -25,7 +25,6 @@ contract MultiSigWalletTest is Test {
         wallet = new MultiSigWallet([aliceAddress, bobAddress]);
         vm.deal(aliceAddress, 100 ether);
         vm.deal(bobAddress, 100 ether);
-
     }
 
     function test_signatureRepayExploit() public depositedEth {
@@ -90,7 +89,7 @@ contract MultiSigWalletTest is Test {
         assertEq(evil.balance, 1 ether);
     }
 
-    modifier depositedEth {
+    modifier depositedEth() {
         vm.prank(aliceAddress);
         wallet.deposit{value: 10 ether}();
 

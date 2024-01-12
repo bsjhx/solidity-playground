@@ -38,11 +38,7 @@ contract MultiSigWallet {
      * @param _amount The amount of Ether to be transferred.
      * @param _sigs Array of signatures from the wallet owners.
      */
-    function transfer(
-        address _to,
-        uint256 _amount,
-        bytes[2] memory _sigs
-    ) external {
+    function transfer(address _to, uint256 _amount, bytes[2] memory _sigs) external {
         bytes32 txHash = getTxHash(_to, _amount);
         require(_checkSigs(_sigs, txHash), "Invalid signature");
         (bool sent,) = _to.call{value: _amount}("");
@@ -56,12 +52,7 @@ contract MultiSigWallet {
      * @param _nonce Nonce to prevent signature replay attacks.
      * @param _sigs Array of signatures from the wallet owners.
      */
-    function transferOk(
-        address _to,
-        uint256 _amount,
-        uint256 _nonce,
-        bytes[2] memory _sigs
-    ) external {
+    function transferOk(address _to, uint256 _amount, uint256 _nonce, bytes[2] memory _sigs) external {
         bytes32 txHash = getTxHashOk(_to, _amount, _nonce);
         require(!s_executed[txHash], "Signature already used");
         require(_checkSigs(_sigs, txHash), "Invalid signature");
@@ -76,11 +67,7 @@ contract MultiSigWallet {
      * @param _to The address to which the Ether is being transferred.
      * @param _amount The amount of Ether to be transferred.
      */
-    function getTxHash(address _to, uint256 _amount)
-    public
-    pure
-    returns (bytes32)
-    {
+    function getTxHash(address _to, uint256 _amount) public pure returns (bytes32) {
         return keccak256(abi.encodePacked(_to, _amount));
     }
 
@@ -90,11 +77,7 @@ contract MultiSigWallet {
      * @param _amount The amount of Ether to be transferred.
      * @param _nonce Nonce to prevent signature replay attacks.
      */
-    function getTxHashOk(address _to, uint256 _amount, uint256 _nonce)
-    public
-    pure
-    returns (bytes32)
-    {
+    function getTxHashOk(address _to, uint256 _amount, uint256 _nonce) public pure returns (bytes32) {
         return keccak256(abi.encodePacked(_to, _amount, _nonce));
     }
 
@@ -104,11 +87,7 @@ contract MultiSigWallet {
      * @param _txHash The hash of the transaction.
      * @return A boolean indicating whether all signatures are valid.
      */
-    function _checkSigs(bytes[2] memory _sigs, bytes32 _txHash)
-    private
-    view
-    returns (bool)
-    {
+    function _checkSigs(bytes[2] memory _sigs, bytes32 _txHash) private view returns (bool) {
         bytes32 ethSignedHash = MessageHashUtils.toEthSignedMessageHash(_txHash);
         for (uint256 i = 0; i < _sigs.length; i++) {
             address signer = ethSignedHash.recover(_sigs[i]);
