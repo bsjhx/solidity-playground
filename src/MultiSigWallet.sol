@@ -1,10 +1,12 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.22;
 
-import {ECDSA} from "github.com/OpenZeppelin/openzeppelin-contracts/blob/release-v4.5/contracts/utils/cryptography/ECDSA.sol";
+import {ECDSA} from "lib/openzeppelin-contracts/contracts/utils/cryptography/ECDSA.sol";
+import "lib/openzeppelin-contracts/contracts/utils/cryptography/MessageHashUtils.sol";
 
 contract MultiSigWallet {
     using ECDSA for bytes32;
+
     address[2] public owners;
 
     constructor(address[2] memory _owners) payable {
@@ -37,7 +39,7 @@ contract MultiSigWallet {
     view
     returns (bool)
     {
-        bytes32 ethSignedHash = _txHash.toEthSignedMessageHash();
+        bytes32 ethSignedHash = MessageHashUtils.toEthSignedMessageHash(_txHash);
         for (uint256 i = 0; i < _sigs.length; i++) {
             address signer = ethSignedHash.recover(_sigs[i]);
             bool valid = signer == owners[i];
