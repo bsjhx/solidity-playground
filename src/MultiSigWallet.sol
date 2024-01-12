@@ -17,6 +17,7 @@ contract MultiSigWallet {
     using ECDSA for bytes32;
 
     address[2] public s_owners;
+    mapping(bytes32 => bool) private s_executed;
 
     /**
      * @param _owners Owners required to manage wallet
@@ -42,6 +43,21 @@ contract MultiSigWallet {
         require(sent, "Failed to send Ether");
     }
 
+    function transferOk(
+        address _to,
+        uint256 _amount,
+        uint256 _nonce,
+        bytes[2] memory _sigs
+    ) external {
+        bytes32 txHash = getTxHashOk(_to, _amount, _nonce);
+        require(!s_executed[txHash], "signature already used");
+        require(_checkSigs(_sigs, txHash), "invalid sig");
+
+        s_executed[txHash] = true;
+        (bool sent,) = _to.call{value: _amount}("");
+        require(sent, "Failed to send Ether");
+    }
+
     /**
      * @notice This is part of broken implementation - it doesn't use nonce!!!
      */
@@ -51,6 +67,14 @@ contract MultiSigWallet {
     returns (bytes32)
     {
         return keccak256(abi.encodePacked(_to, _amount));
+    }
+
+    function getTxHashOk(address _to, uint256 _amount, uint256 _nonce)
+    public
+    pure
+    returns (bytes32)
+    {
+        return keccak256(abi.encodePacked(_to, _amount, _nonce));
     }
 
     function _checkSigs(bytes[2] memory _sigs, bytes32 _txHash)

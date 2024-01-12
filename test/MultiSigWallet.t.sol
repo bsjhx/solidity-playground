@@ -28,7 +28,7 @@ contract MultiSigWalletTest is Test {
 
     }
 
-    function test_basic() public depositedEth {
+    function test_signatureRepayExploit() public depositedEth {
         assertEq(address(wallet).balance, 20 ether);
         assertEq(evil.balance, 0 ether);
 
@@ -56,7 +56,38 @@ contract MultiSigWalletTest is Test {
 
         assertEq(address(wallet).balance, 18 ether);
         assertEq(evil.balance, 2 ether);
+    }
 
+    function test_signatureRepayExploitDoesNotOccur() public depositedEth {
+        assertEq(address(wallet).balance, 20 ether);
+        assertEq(evil.balance, 0 ether);
+
+        // 1. Get tx hash
+        vm.prank(aliceAddress);
+        uint256 nonce = 0;
+        bytes32 txHash = wallet.getTxHashOk(evil, 1 ether, nonce);
+
+        // 2. Alice signs tx hash
+        bytes32 digest = MessageHashUtils.toEthSignedMessageHash(txHash);
+        (uint8 v, bytes32 r, bytes32 s) = vm.sign(alicePrivateKey, digest);
+        bytes memory aliceSignedTxHash = abi.encodePacked(r, s, v);
+
+        // 2. Bob signs tx hash
+        (uint8 v2, bytes32 r2, bytes32 s2) = vm.sign(bobPrivateKey, digest);
+        bytes memory bobSignedTxHash = abi.encodePacked(r2, s2, v2);
+
+        // 3. Evil withdraw Eth
+        vm.startPrank(evil);
+        wallet.transferOk(evil, 1 ether, nonce, [aliceSignedTxHash, bobSignedTxHash]);
+
+        // 4. ... and does it again with same signed message - transaction is reverted!
+        vm.expectRevert(bytes("signature already used"));
+        wallet.transferOk(evil, 1 ether, nonce, [aliceSignedTxHash, bobSignedTxHash]);
+
+        vm.stopPrank();
+
+        assertEq(address(wallet).balance, 19 ether);
+        assertEq(evil.balance, 1 ether);
     }
 
     modifier depositedEth {
